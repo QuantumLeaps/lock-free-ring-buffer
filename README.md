@@ -38,7 +38,7 @@ LFRB is [licensed](LICENSE.txt) under the MIT open source license.
 ---------------------------------------------------------------------
 # Comments/Discussion
 If you'd like to discuss LFRB or related subjects, plese use the
-["Issues" tab](https://github.com/QuantumLeaps/FreeAct/issues).
+["Issues" tab](https://github.com/QuantumLeaps/lock-free-ring-buffer/issues).
 
 
 ---------------------------------------------------------------------
