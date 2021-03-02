@@ -3,7 +3,7 @@
 * @brief Lock-free ring buffer
 */
 /*****************************************************************************
-* Last updated on  2021-02-12
+* Last updated on  2021-03-02
 *
 *                    Q u a n t u m  L e a P s
 *                    ------------------------
@@ -56,7 +56,7 @@ bool RingBuf_put(RingBuf * const me, RingBufElement const el) {
     }
     if (head != me->tail) { /* buffer NOT full? */
         me->buf[me->head] = el;
-        me->head = head;
+        me->head = head; /* update the head to a *valid* index */
         return true;  /* element placed in the buffer */
     }
     else {
@@ -65,13 +65,14 @@ bool RingBuf_put(RingBuf * const me, RingBufElement const el) {
 }
 /*..........................................................................*/
 bool RingBuf_get(RingBuf * const me, RingBufElement *pel) {
-    RingBufCtr head = me->head;
-    if (head != me->tail) { /* ring buffer NOT empty? */
-        *pel = me->buf[me->tail];
-        ++me->tail;
-        if (me->tail == me->end) {
-            me->tail = 0U;
+    RingBufCtr tail = me->tail;
+    if (me->head != tail) { /* ring buffer NOT empty? */
+        *pel = me->buf[tail];
+        ++tail;
+        if (tail == me->end) {
+            tail = 0U;
         }
+        me->tail = tail; /* update the tail to a *valid* index */
         return true;
     }
     else {
@@ -80,25 +81,27 @@ bool RingBuf_get(RingBuf * const me, RingBufElement *pel) {
 }
 /*..........................................................................*/
 void RingBuf_process_all(RingBuf * const me, RingBufHandler handler) {
-    RingBufCtr head = me->head;
-    while (head != me->tail) { /* ring buffer NOT empty? */
-        (*handler)(me->buf[me->tail]);
-        ++me->tail;
-        if (me->tail == me->end) {
-            me->tail = 0U;
+    RingBufCtr tail = me->tail;
+    while (me->head != tail) { /* ring buffer NOT empty? */
+        (*handler)(me->buf[tail]);
+        ++tail;
+        if (tail == me->end) {
+            tail = 0U;
         }
+        me->tail = tail; /* update the tail to a *valid* index */
     }
 }
 /*..........................................................................*/
 RingBufCtr RingBuf_num_free(RingBuf * const me) {
     RingBufCtr head = me->head;
-    if (head == me->tail) { /* buffer empty? */
+    RingBufCtr tail = me->tail;
+    if (head == tail) { /* buffer empty? */
         return (RingBufCtr)(me->end - 1U);
     }
-    else if (head < me->tail) {
-        return (RingBufCtr)(me->tail - head - 1U);
+    else if (head < tail) {
+        return (RingBufCtr)(tail - head - 1U);
     }
     else {
-        return (RingBufCtr)(me->end + me->tail - head - 1U);
+        return (RingBufCtr)(me->end + tail - head - 1U);
     }
 }
