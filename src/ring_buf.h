@@ -3,7 +3,7 @@
 * @brief Lock-free ring buffer
 */
 /*****************************************************************************
-* Last updated on  2021-02-12
+* Last updated on  2022-02-22
 *
 *                    Q u a n t u m  L e a P s
 *                    ------------------------
@@ -38,14 +38,31 @@
 #ifndef RING_BUF_H
 #define RING_BUF_H
 
-typedef uint8_t RingBufElement;
+/*
+* ASSUMPTION:
+* The following RingBufCtr type is assumed to be "atomic" in a target CPU,
+* meaning that the CPU needs to write the whole RingBufCtr in one machine
+* instruction. An example of violating this assumption would be an 8-bit
+* CPU, which writes uint16_t (2-bytes) in 2 machine instructions. For such
+* 8-bit CPU, the maximum size of RingBufCtr would be uint8_t (1-byte).
+*
+* Another case of violating the "atomic" writes to RingBufCtr type would
+* be misalignment of a RingBufCtr variable in memory, which could cause
+* the compiler to generate multiple instructions to write a RingBufCtr value.
+* Therefore, it is further assumed that all RingBufCtr variables in the
+* following RingBuf struct *are* correctly aligned for "atomic" access.
+* In practice, most C compilers should provide such natural alignment
+* (by inserting some padding into the struct, if necessary).
+*/
 typedef uint16_t RingBufCtr;
+
+typedef uint8_t RingBufElement;
 
 typedef struct {
     RingBufElement *buf; /*!< pointer to the start of the ring buffer */
     RingBufCtr     end;  /*!< offset of the end of the ring buffer */
-    RingBufCtr     head; /*!< offset to where next byte will be inserted */
-    RingBufCtr     tail; /*!< offset of where next byte will be extracted */
+    RingBufCtr volatile head; /*!< offset to where next el. will be inserted */
+    RingBufCtr volatile tail; /*!< offset of where next el. will be extracted */
 } RingBuf;
 
 typedef void (*RingBufHandler)(RingBufElement const el);
