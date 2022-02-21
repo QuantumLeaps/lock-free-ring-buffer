@@ -51,7 +51,7 @@
 * the compiler to generate multiple instructions to write a RingBufCtr value.
 * Therefore, it is further assumed that all RingBufCtr variables in the
 * following RingBuf struct *are* correctly aligned for "atomic" access.
-* In practice, most of C compilers should provide such natural alignment
+* In practice, most C compilers should provide such natural alignment
 * (by inserting some padding into the struct, if necessary).
 */
 typedef uint16_t RingBufCtr;
