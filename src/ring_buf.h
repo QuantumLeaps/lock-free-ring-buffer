@@ -3,7 +3,7 @@
 * @brief Lock-free ring buffer
 */
 /*****************************************************************************
-* Last updated on  2022-02-21
+* Last updated on  2022-02-22
 *
 *                    Q u a n t u m  L e a P s
 *                    ------------------------
@@ -61,8 +61,8 @@ typedef uint8_t RingBufElement;
 typedef struct {
     RingBufElement *buf; /*!< pointer to the start of the ring buffer */
     RingBufCtr     end;  /*!< offset of the end of the ring buffer */
-    RingBufCtr     head; /*!< offset to where next byte will be inserted */
-    RingBufCtr     tail; /*!< offset of where next byte will be extracted */
+    RingBufCtr volatile head; /*!< offset to where next el. will be inserted */
+    RingBufCtr volatile tail; /*!< offset of where next el. will be extracted */
 } RingBuf;
 
 typedef void (*RingBufHandler)(RingBufElement const el);
