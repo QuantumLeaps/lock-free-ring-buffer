@@ -32,7 +32,7 @@ LIB_DIRS :=
 LIBS     :=
 
 # defines...
-DEFINES  := -DNDEBUG
+DEFINES  :=
 
 #============================================================================
 # Typically you should not need to change anything below this line
