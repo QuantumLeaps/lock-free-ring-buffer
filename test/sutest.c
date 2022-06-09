@@ -1,9 +1,4 @@
-/**
-* @file
-* @brief Simple Unit Testing ("SUTEST") framework
-*/
-/*****************************************************************************
-* Last updated on  2022-06-08
+/*============================================================================
 *
 *                    Q u a n t u m  L e a P s
 *                    ------------------------
@@ -11,42 +6,32 @@
 *
 * Copyright (C) 2021 Quantum Leaps, LLC. All rights reserved.
 *
-* This software is licensed under the following open source MIT license:
-*
-* Permission is hereby granted, free of charge, to any person obtaining
-* a copy of this software and associated documentation files (the "Software"),
-* to deal in the Software without restriction, including without limitation
-* the rights to use, copy, modify, merge, publish, distribute, sublicense,
-* and/or sell copies of the Software, and to permit persons to whom the
-* Software is furnished to do so, subject to the following conditions:
-*
-* The above copyright notice and this permission notice shall be included
-* in all copies or substantial portions of the Software.
-*
-* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-* OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-* FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
-* THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-* LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-* FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-* DEALINGS IN THE SOFTWARE.
+* SPDX-License-Identifier: MIT
 *
 * Contact information:
 * <www.state-machine.com>
 * <info@state-machine.com>
+============================================================================*/
+/*!
+* @date Last updated on: 2022-06-09
+*
+* @file
+* @brief Simple Unit Testing ("SUTEST") framework
 */
+
 #include "sutest.h"
 
 #include <stdio.h>  /* for printf() */
 #include <stdlib.h> /* for exit() */
 
+/* is this Windows OS? */
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h> /* for DebugBreak() */
 #define DBG_BREAK() DebugBreak()
 
-#else
+#else /* not Windows */
 
 #define DBG_BREAK() ((void)0)
 
@@ -58,17 +43,20 @@ static int l_test_count;
 /*..........................................................................*/
 void TEST(char const *title) {
     if (l_test_count > 0) {
+        tearDown();
         printf(" PASSED\n");
     }
-    printf("test: \"%s\" ...", title);
+    printf("test[%2d] | \"%s\"", l_test_count, title);
+    setUp();
+    printf("%s", "...");
     ++l_test_count;
 }
 
 /*..........................................................................*/
 void TEST_fail_(char const *cond, char const *file, int line) {
     printf(" FAILED in %s:%d\n"
-        "%s\n"
-        "---------------------------------------------\n"
+        "expected : \"%s\"\n"
+        "-------------------------------------------------------\n"
         "%d test(s)\n"
         "FAILED\n",
         file, line, cond, l_test_count);
@@ -79,14 +67,17 @@ void TEST_fail_(char const *cond, char const *file, int line) {
 
 /*..........................................................................*/
 int main(void) {
-    printf("\n%s\n", "Simple Unit Internal Testing -- SUTEST");
+    printf("\n%s\n%s\n",
+           "\"SUTEST\": Simple Unit Testing (github.com/QuantumLeaps)",
+           "-------------------------------------------------------");
 
     TEST_onRun();
 
     if (l_test_count > 0) {
+        tearDown();
         printf("%s\n", " PASSED");
     }
-    printf("---------------------------------------------\n"
+    printf("-------------------------------------------------------\n"
         "%d test(s)\nOK\n", l_test_count);
 
     return 0; /* success */

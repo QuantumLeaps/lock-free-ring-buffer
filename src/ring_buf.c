@@ -1,9 +1,4 @@
-/**
-* @file
-* @brief Lock-free ring buffer
-*/
-/*****************************************************************************
-* Last updated on  2021-03-02
+/*============================================================================
 *
 *                    Q u a n t u m  L e a P s
 *                    ------------------------
@@ -11,30 +6,19 @@
 *
 * Copyright (C) 2021 Quantum Leaps, LLC. All rights reserved.
 *
-* This software is licensed under the following open source MIT license:
-*
-* Permission is hereby granted, free of charge, to any person obtaining
-* a copy of this software and associated documentation files (the "Software"),
-* to deal in the Software without restriction, including without limitation
-* the rights to use, copy, modify, merge, publish, distribute, sublicense,
-* and/or sell copies of the Software, and to permit persons to whom the
-* Software is furnished to do so, subject to the following conditions:
-*
-* The above copyright notice and this permission notice shall be included
-* in all copies or substantial portions of the Software.
-*
-* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-* OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-* FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
-* THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-* LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-* FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-* DEALINGS IN THE SOFTWARE.
+* SPDX-License-Identifier: MIT
 *
 * Contact information:
 * <www.state-machine.com>
 * <info@state-machine.com>
+============================================================================*/
+/*!
+* @date Last updated on: 2022-06-09
+*
+* @file
+* @brief Lock-free ring buffer
 */
+
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -55,7 +39,7 @@ bool RingBuf_put(RingBuf * const me, RingBufElement const el) {
         head = 0U;
     }
     if (head != me->tail) { /* buffer NOT full? */
-        me->buf[me->head] = el;
+        me->buf[me->head] = el; /* copy the element into the buffer */
         me->head = head; /* update the head to a *valid* index */
         return true;  /* element placed in the buffer */
     }
@@ -80,18 +64,6 @@ bool RingBuf_get(RingBuf * const me, RingBufElement *pel) {
     }
 }
 /*..........................................................................*/
-void RingBuf_process_all(RingBuf * const me, RingBufHandler handler) {
-    RingBufCtr tail = me->tail;
-    while (me->head != tail) { /* ring buffer NOT empty? */
-        (*handler)(me->buf[tail]);
-        ++tail;
-        if (tail == me->end) {
-            tail = 0U;
-        }
-        me->tail = tail; /* update the tail to a *valid* index */
-    }
-}
-/*..........................................................................*/
 RingBufCtr RingBuf_num_free(RingBuf * const me) {
     RingBufCtr head = me->head;
     RingBufCtr tail = me->tail;
@@ -103,5 +75,18 @@ RingBufCtr RingBuf_num_free(RingBuf * const me) {
     }
     else {
         return (RingBufCtr)(me->end + tail - head - 1U);
+    }
+}
+
+/*..........................................................................*/
+void RingBuf_process_all(RingBuf * const me, RingBufHandler handler) {
+    RingBufCtr tail = me->tail;
+    while (me->head != tail) { /* ring buffer NOT empty? */
+        (*handler)(me->buf[tail]);
+        ++tail;
+        if (tail == me->end) {
+            tail = 0U;
+        }
+        me->tail = tail; /* update the tail to a *valid* index */
     }
 }
