@@ -1,3 +1,7 @@
+## Brought to you by:
+[![Quantum Leaps](https://www.state-machine.com/attachments/logo_ql_400.png)](https://www.state-machine.co)
+
+---------------------------------------------------------------------
 # What is it?
 "Lock-Free Ring Buffer" (LFRB) is a minimal, customizable implementation
 of a ring buffer (a.k.a. circular buffer) in C, specifically suitable
@@ -45,7 +49,7 @@ and examples of use of LFRB are located in the file:
 
 
 # Licensing
-The LFRB is [licensed](LICENSE.txt) under the MIT open source license.
+The LFRB is [licensed](LICENSE) under the MIT open source license.
 
 
 # Comments/Discussion
