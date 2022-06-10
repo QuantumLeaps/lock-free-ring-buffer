@@ -1,23 +1,33 @@
 /*============================================================================
+* Lock-Free Ring Buffer (LFRB) for embedded systems
+* GitHub: https://github.com/QuantumLeaps/lock-free-ring-buffer
 *
 *                    Q u a n t u m  L e a P s
 *                    ------------------------
 *                    Modern Embedded Software
 *
-* Copyright (C) 2021 Quantum Leaps, LLC. All rights reserved.
+* Copyright (C) 2005 Quantum Leaps, <state-machine.com>.
 *
 * SPDX-License-Identifier: MIT
 *
-* Contact information:
-* <www.state-machine.com>
-* <info@state-machine.com>
-============================================================================*/
-/*!
-* @date Last updated on: 2022-06-09
+* Permission is hereby granted, free of charge, to any person obtaining a
+* copy of this software and associated documentation files (the "Software"),
+* to deal in the Software without restriction, including without limitation
+* the rights to use, copy, modify, merge, publish, distribute, sublicense,
+* and/or sell copies of the Software, and to permit persons to whom the
+* Software is furnished to do so, subject to the following conditions:
 *
-* @file
-* @brief Lock-free ring buffer
-*/
+* The above copyright notice and this permission notice shall be included in
+* all copies or substantial portions of the Software.
+*
+* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+* IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+* FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+* THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+* LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+* FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+* DEALINGS IN THE SOFTWARE.
+============================================================================*/
 #ifndef RING_BUF_H
 #define RING_BUF_H
 
@@ -36,7 +46,7 @@
 * Therefore, it is further assumed that all RingBufCtr variables in the
 * following RingBuf struct *are* correctly aligned for "atomic" access.
 * In practice, most C compilers should provide such natural alignment
-* (by inserting some padding into the struct, if necessary).
+* (by inserting some padding into the ::RingBuf struct, if necessary).
 */
 typedef uint16_t RingBufCtr;
 
@@ -55,9 +65,9 @@ typedef uint8_t RingBufElement;
 /*! Ring buffer struct */
 typedef struct {
     RingBufElement *buf; /*!< pointer to the start of the ring buffer */
-    RingBufCtr     end;  /*!< offset of the end of the ring buffer */
-    RingBufCtr volatile head; /*!< offset to where next el. will be inserted */
-    RingBufCtr volatile tail; /*!< offset of where next el. will be removed */
+    RingBufCtr end;  /*!< offset of the end of the ring buffer */
+    RingBufCtr head; /*!< offset to where next el. will be inserted */
+    RingBufCtr tail; /*!< offset of where next el. will be removed */
 } RingBuf;
 
 void RingBuf_ctor(RingBuf * const me,
