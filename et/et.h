@@ -32,7 +32,7 @@
 #define ET_H_
 
 /* Embedded Test (ET) version */
-#define ET_VERSION "1.0.0"
+#define ET_VERSION "2.0.0"
 
 /*! macro to define a test group */
 #define TEST_GROUP(name_) \
