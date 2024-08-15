@@ -8,8 +8,17 @@
 # What is it?
 "Lock-Free Ring Buffer" (LFRB) is a minimal, customizable implementation
 of a ring buffer (a.k.a. circular buffer) in C, specifically suitable
-for embedded systems.
+for embedded systems, such as single-core microcontrollers with:
+- ARM Cortex-M CPU
+- MSP430 CPU
+- PIC24/dsPIC CPU
+- other similar 16/32-bit CPUs
 
+> **NOTE** The presented LFRB implementation is intended for deeply embedded
+systems, such as single-core ARM Cortex-M MCUs. The presented implementation
+might not be appropriate for complex multi-core SoCs with cache memory, etc.
+Please refer to the literature, for example:
+[<i>Correct and Efficient Bounded FIFO Queues</i>](https://www.irif.fr/~guatto/papers/sbac13.pdf).
 
 # Lock-Free Restrictions
 The ring buffer does not require any "locking" (mutual exclusion
@@ -17,14 +26,14 @@ mechanism) as long as the following restrictions are met:
 
 1. Only one thread/interrupt can produce data into the ring buffer
 2. Only one thread/interrupt can consume data from the ring buffer
+3. Both the producer and consumer run on the same CPU
+4. The system has strong memory consistency
+5. Additional assumptions about the "atomicity" of the LFRB counters
+are spelled out in the [ring_buf.h](src/ring_buf.h) header file
 
-In other words, a given LFRB can be used only by one pair of producer/
-consumer threads/interrupts. Fortunately, this is the most frequently
-encountered scenario.
-
-There are also some additional assumptions about the "atomicity" of the
-LFRB counters, which are spelled out in the [ring_buf.h](src/ring_buf.h)
-header file.
+In other words, LFRB is a **single-producer, single-consumer FIFO**.
+Fortunately, this is the most frequently encountered scenario in deeply
+embedded applications.
 
 # Code Structure
 The ring buffer implementation consists of two files located in the
@@ -59,7 +68,6 @@ The LFRB is [licensed](LICENSE) under the MIT open source license.
 # Comments/Discussion
 If you'd like to discuss LFRB or related subjects, plese use the
 ["Issues" tab](https://github.com/QuantumLeaps/lock-free-ring-buffer/issues).
-
 
 # How to Help this Project?
 Please feel free to clone, fork, and make pull requests to improve LFRB.
