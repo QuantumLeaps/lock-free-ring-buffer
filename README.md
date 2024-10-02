@@ -15,10 +15,11 @@ for embedded systems, such as single-core microcontrollers with:
 - other similar 16/32-bit CPUs
 
 > **NOTE** The presented LFRB implementation is intended for deeply embedded
-systems, such as single-core ARM Cortex-M MCUs. The presented implementation
-might not be appropriate for complex multi-core SoCs with cache memory, etc.
-Please refer to the literature, for example:
-[<i>Correct and Efficient Bounded FIFO Queues</i>](https://www.irif.fr/~guatto/papers/sbac13.pdf).
+systems, such as single-core ARM Cortex-M MCUs without cache memories.
+The presented implementation might not be appropriate for complex multi-core
+SoCs with cache memory, etc. Please refer to the literature, for example:
+- [<i>Correct and Efficient Bounded FIFO Queues</i>](lit/RR-8365.pdf).
+- [<i>Optimised Lock-Free FIFO Queue</i>](lit/Optimised_lock_free_FIFO_queue.pdf).
 
 # Lock-Free Restrictions
 The ring buffer does not require any "locking" (mutual exclusion
