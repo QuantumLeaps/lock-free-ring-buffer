@@ -38,44 +38,46 @@ void RingBuf_ctor(RingBuf * const me,
                   RingBufElement sto[], RingBufCtr sto_len) {
     me->buf  = &sto[0];
     me->end  = sto_len;
-    me->head = 0U;
-    me->tail = 0U;
+    atomic_store(&me->head, 0U);  /* initialize head atomically */
+    atomic_store(&me->tail, 0U);  /* initialize tail atomically */
 }
 /*..........................................................................*/
 bool RingBuf_put(RingBuf * const me, RingBufElement const el) {
-    RingBufCtr head = me->head + 1U;
+    RingBufCtr head = atomic_load_explicit(&me->head, memory_order_relaxed) + 1U;
     if (head == me->end) {
         head = 0U;
     }
-    if (head != me->tail) { /* buffer NOT full? */
-        me->buf[me->head] = el; /* copy the element into the buffer */
-        me->head = head; /* update the head to a *valid* index */
-        return true;  /* element placed in the buffer */
+    RingBufCtr tail = atomic_load_explicit(&me->tail, memory_order_acquire); /* acquire before checking tail */
+    if (head != tail) { /* buffer NOT full? */
+        me->buf[atomic_load_explicit(&me->head, memory_order_relaxed)] = el; /* write to buffer */
+        atomic_store_explicit(&me->head, head, memory_order_release); /* update head with release */
+        return true;
     }
     else {
-        return false; /* element NOT placed in the buffer */
+        return false; /* buffer full */
     }
 }
 /*..........................................................................*/
 bool RingBuf_get(RingBuf * const me, RingBufElement *pel) {
-    RingBufCtr tail = me->tail;
-    if (me->head != tail) { /* ring buffer NOT empty? */
+    RingBufCtr tail = atomic_load_explicit(&me->tail, memory_order_relaxed);
+    RingBufCtr head = atomic_load_explicit(&me->head, memory_order_acquire); /* acquire before accessing head */
+    if (head != tail) { /* buffer NOT empty? */
         *pel = me->buf[tail];
         ++tail;
         if (tail == me->end) {
             tail = 0U;
         }
-        me->tail = tail; /* update the tail to a *valid* index */
+        atomic_store_explicit(&me->tail, tail, memory_order_release); /* update tail with release */
         return true;
     }
     else {
-        return false;
+        return false; /* buffer empty */
     }
 }
 /*..........................................................................*/
 RingBufCtr RingBuf_num_free(RingBuf * const me) {
-    RingBufCtr head = me->head;
-    RingBufCtr tail = me->tail;
+    RingBufCtr head = atomic_load_explicit(&me->head, memory_order_acquire); /* acquire for consistency */
+    RingBufCtr tail = atomic_load_explicit(&me->tail, memory_order_relaxed);
     if (head == tail) { /* buffer empty? */
         return (RingBufCtr)(me->end - 1U);
     }
@@ -89,13 +91,14 @@ RingBufCtr RingBuf_num_free(RingBuf * const me) {
 
 /*..........................................................................*/
 void RingBuf_process_all(RingBuf * const me, RingBufHandler handler) {
-    RingBufCtr tail = me->tail;
-    while (me->head != tail) { /* ring buffer NOT empty? */
+    RingBufCtr tail = atomic_load_explicit(&me->tail, memory_order_relaxed);
+    RingBufCtr head = atomic_load_explicit(&me->head, memory_order_acquire); /* acquire for processing */
+    while (head != tail) { /* buffer NOT empty? */
         (*handler)(me->buf[tail]);
         ++tail;
         if (tail == me->end) {
             tail = 0U;
         }
-        me->tail = tail; /* update the tail to a *valid* index */
+        atomic_store_explicit(&me->tail, tail, memory_order_release); /* update tail */
     }
 }

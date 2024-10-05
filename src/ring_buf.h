@@ -31,6 +31,10 @@
 #ifndef RING_BUF_H
 #define RING_BUF_H
 
+#include <stdatomic.h>
+#include <stdint.h>
+#include <stdbool.h>
+
 /*! Ring buffer counter/index
 *
 * @attention
@@ -66,12 +70,11 @@ typedef uint8_t RingBufElement;
 typedef struct {
     RingBufElement *buf; /*!< pointer to the start of the ring buffer */
     RingBufCtr end;  /*!< offset of the end of the ring buffer */
-    RingBufCtr head; /*!< offset to where next el. will be inserted */
-    RingBufCtr tail; /*!< offset of where next el. will be removed */
+    _Atomic(RingBufCtr) head; /*!< atomic offset to where next element will be inserted */
+    _Atomic(RingBufCtr) tail; /*!< atomic offset of where next element will be removed */
 } RingBuf;
 
-void RingBuf_ctor(RingBuf * const me,
-                  RingBufElement sto[], RingBufCtr sto_len);
+void RingBuf_ctor(RingBuf * const me, RingBufElement sto[], RingBufCtr sto_len);
 RingBufCtr RingBuf_num_free(RingBuf * const me);
 bool RingBuf_put(RingBuf * const me, RingBufElement const el);
 bool RingBuf_get(RingBuf * const me, RingBufElement *pel);
