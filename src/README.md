@@ -20,70 +20,70 @@ In this context, the atomicity and memory ordering serve two purposes:
 ### Rationale for Specific Atomic Operations in `ring_buf.c`:
 
 #### 1. `RingBuf_put()`
-```C++
+```c
 RingBufCtr head = atomic_load_explicit(&me->head, memory_order_relaxed);
 ```
 - **Why `memory_order_relaxed`?**
   - We are only reading the `head` index to calculate where to write the next element. This read doesn’t involve any synchronization with the consumer (which reads `tail`). The key point here is that this read is purely for internal logic, and the synchronization comes later when the `head` is updated. Therefore, `memory_order_relaxed` is sufficient for this read.
 
-```C++
+```c
 RingBufCtr tail = atomic_load_explicit(&me->tail, memory_order_acquire);
 ```
 - **Why `memory_order_acquire`?**
   - This is a critical read. Before we write a new element to the buffer, we need to ensure that any writes to the buffer that occurred before this point (from the consumer) are visible. By using `memory_order_acquire`, we ensure that the consumer's operations (which may have modified `tail`) are fully visible to the producer. The acquire order ensures that the producer sees the most up-to-date value of `tail` and any prior operations done by the consumer.
 
-```C++
+```c
 me->buf[me->head] = el;
 ```
 - **Why no atomic operation on `buf[]`?**
   - The buffer itself (`buf[]`) does not need to be accessed atomically. The synchronization is achieved through atomic accesses to `head` and `tail`. Once `head` and `tail` are updated atomically, the buffer access is guaranteed to be valid.
 
-```C++
+```c
 atomic_store_explicit(&me->head, head, memory_order_release);
 ```
 - **Why `memory_order_release`?**
   - This is the key update in `put()`. By storing `head` with a `memory_order_release`, we ensure that all prior memory writes (i.e., the write to `buf[me->head]`) are completed before `head` is updated. This guarantees that once the consumer reads `head`, it will see all the writes to the buffer that happened before this update. This ensures the consumer sees the correct data in the buffer.
 
 #### 2. `RingBuf_get()`
-```C++
+```c
 RingBufCtr tail = atomic_load_explicit(&me->tail, memory_order_relaxed);
 ```
 - **Why `memory_order_relaxed`?**
   - This is similar to the `head` read in `put()`. We are reading `tail` for internal logic, and this does not require synchronization with the producer. The critical synchronization point is when `head` is read, which comes next.
 
-```C++
+```c
 RingBufCtr head = atomic_load_explicit(&me->head, memory_order_acquire);
 ```
 - **Why `memory_order_acquire`?**
   - The consumer needs to ensure that any writes performed by the producer (to both `head` and the buffer) are fully visible before the consumer reads the data. By using `memory_order_acquire`, we guarantee that the consumer will see all the memory writes performed by the producer up to the point where `head` was updated. This ensures that the consumer reads the correct data from the buffer.
 
-```C++
+```c
 atomic_store_explicit(&me->tail, tail, memory_order_release);
 ```
 - **Why `memory_order_release`?**
   - This update to `tail` indicates that the consumer has processed an element from the buffer. We use `memory_order_release` to ensure that all memory writes (e.g., modifications to `pel`) are completed before this update. This guarantees that when the producer reads `tail`, it will see the effects of the consumer's operations.
 
 #### 3. `RingBuf_num_free()`
-```C++
+```c
 RingBufCtr head = atomic_load_explicit(&me->head, memory_order_acquire);
 ```
 - **Why `memory_order_acquire`?**
   - The purpose of `RingBuf_num_free()` is to provide an accurate count of the available space in the buffer. To do so, it needs to ensure that it has the most up-to-date value of `head`, especially when called by the consumer. Using `memory_order_acquire` ensures that any previous writes to `head` by the producer are visible to this function.
 
-```C++
+```c
 RingBufCtr tail = atomic_load_explicit(&me->tail, memory_order_relaxed);
 ```
 - **Why `memory_order_relaxed`?**
   - This is a non-critical read. We are simply using it for calculating available space, and there’s no need for synchronization at this point. We’ve already synchronized with `head`, which is the key variable for space calculation.
 
 #### 4. `RingBuf_process_all()`
-```C++
+```c
 RingBufCtr head = atomic_load_explicit(&me->head, memory_order_acquire);
 ```
 - **Why `memory_order_acquire`?**
   - This function processes elements from the buffer and needs to ensure it sees the most up-to-date value of `head`, reflecting the producer's actions. By using `memory_order_acquire`, it guarantees that any data written to the buffer by the producer is visible to the consumer.
 
-```C++
+```c
 atomic_store_explicit(&me->tail, tail, memory_order_release);
 ```
 - **Why `memory_order_release`?**
