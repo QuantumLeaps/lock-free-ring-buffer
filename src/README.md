@@ -1,3 +1,47 @@
+# Research
+
+While a variable that is a single instruction load/store operations on a processor does provide some level of atomicity, there are a few additional considerations:
+
+> Atomicity vs. Memory Ordering
+
+**Atomicity:** Ensures that a read or write operation completes without interruption. For up to uint32_t variables, this is generally true on ARM Cortex-M processors.
+
+**Memory Ordering:** Ensures the correct sequence of operations across multiple threads. This is where std::memory_order comes into play.
+
+**C Sequence Points:** Define points in the code where all side effects of previous evaluations are complete, and no side effects of subsequent evaluations have started.
+
+While sequence points help with ordering within a single thread, they don’t provide guarantees for memory visibility across multiple threads.
+
+> Key reasons why memory ordering is considered relevant:
+
+**Reordering by the Compiler:**
+The C and C++ standards allow the compiler to reorder instructions for optimization unless explicitly told not to. For example, without memory barriers or memory ordering, the compiler could:
+
+- Write the head pointer (indicating that new data is available) before the data itself is written to the buffer.
+- Read the head pointer before reading the data, leading to the consumer seeing stale or partially written data.
+Even if write_index and buffer[] are uint32_t, this reordering could result in the producer marking the data as ready (by updating the write_index) before the data itself has been fully written.
+
+**Reordering by the Processor:**
+While a Cortex-M4 has a simpler memory model than modern multi-core processors, it's still possible for the memory subsystem to perform some reordering, particularly with peripheral memory accesses.
+
+**Interrupts:**
+ISR could preempt the main thread at any point, including in the middle of a read-modify-write sequence, leading to inconsistent states if proper synchronization isn't enforced. If the write_index is being updated at the same time the main thread reads it, the value read by the main thread could be incomplete or inconsistent.
+
+**Sequence Points in C:**
+C sequence points (or in C++, sequencing rules) provide guarantees about when side effects (like memory writes) occur relative to other operations within the same thread. However, these guarantees do not extend across multiple threads or between an interrupt handler and the main thread. This is why memory ordering is required to ensure that changes made by one thread (or ISR) are visible to another in the correct order.
+
+Even though variables up to unin32_t are single instruction load/store, without explicit memory ordering, there's no guarantee that:
+- The producer writes data to the buffer before updating the write_index.
+- The consumer reads the buffer data only after it sees the updated write_index.
+
+Use of acquire-release semantics ensures that:
+- **Release semantics (memory_order_release)** in the put() function guarantee that any prior writes (to the buffer) are visible before the write_index is updated.
+- **Acquire semantics (memory_order_acquire)** in the get() function ensure that after reading the write_index, the consumer sees the correct data in the buffer.
+
+With all this I ended up concluding there is indeed an issue that needs consideration for my use case, at least for ARM Cortex m4 and m7 that I am targeting.
+
+# C Ring Buffer Implementation
+
 The rationale behind the specific atomic access types in `ring_buf.c` implementation is based on the following principles of atomicity and memory ordering:
 
 ### Key Points of Atomic Operations:
