@@ -179,7 +179,7 @@ endif
 endif
 
 clean :
-	-$(RM) $(BIN_DIR)/*.*
+	-$(RM) -rf $(BIN_DIR)
 
 show :
 	@echo PROJECT      = $(PROJECT)
