@@ -106,7 +106,7 @@ endif
 #-----------------------------------------------------------------------------
 # build options...
 
-BIN_DIR := build
+BIN_DIR := build_host
 
 CFLAGS  := -c -g -O -fno-pie -std=c11 -pedantic -Wall -Wextra -W \
 	$(INCLUDES) $(DEFINES) -DQ_HOST

@@ -46,7 +46,7 @@ The rationale behind the specific atomic access types in `ring_buf.c` implementa
 
 ### Key Points of Atomic Operations:
 1. **Relaxed Memory Order** (`memory_order_relaxed`): This is used when the operation needs to be atomic, but doesn’t require any synchronization with other threads. This is typically used for operations when only updating a value that doesn’t affect memory visibility between threads.
-   
+
 2. **Acquire Memory Order** (`memory_order_acquire`): This ensures that all subsequent memory reads and writes are done **after** the acquire operation. Used for a read of a shared variable, ensuring that the application also sees any side effects that happened in another thread before writing to that variable.
 
 3. **Release Memory Order** (`memory_order_release`): This ensures that all previous memory writes are completed **before** the release operation. This is used when writing to a shared variable to ensure that any data written prior to this write is visible to other threads that subsequently acquire this variable.
