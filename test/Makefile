@@ -29,6 +29,16 @@
 # DEALINGS IN THE SOFTWARE.
 ##############################################################################
 #
+# examples of invoking this Makefile:
+# make         # build, run the tests, and report the code coverage
+# make norun   # only build but not run the tests
+# make clean   # cleanup the build and the coverage reports
+#
+# The tests are always built with structural coverage instrumentation.
+# After the run, gcov reports the coverage of the code under test (CUT,
+# ring_buf.c) in the file ring_buf.cov (also shown on the console) and
+# in the annotated source file ring_buf.c.gcov.
+#
 # NOTE:
 # To use this Makefile on Windows, you will need the GNU make utility, which
 # is included in the QTools collection for Windows, see:
@@ -39,6 +49,9 @@
 # project name:
 PROJECT := test_ring_buf
 ET_DIR  := ../et
+
+# code under test (CUT), whose coverage is reported (without extension)
+CUT     := ring_buf
 
 # list of all source directories used by this project
 VPATH := . \
@@ -92,15 +105,31 @@ LINK  := gcc    # for C programs
 ifeq ($(OS),Windows_NT)
 	MKDIR      := mkdir
 	RM         := rm
+	CAT        := type
 	TARGET_EXT := .exe
 else ifeq ($(OSTYPE),cygwin)
 	MKDIR      := mkdir -p
 	RM         := rm -f
+	CAT        := cat
 	TARGET_EXT := .exe
 else
 	MKDIR      := mkdir -p
 	RM         := rm -f
+	CAT        := cat
 	TARGET_EXT :=
+endif
+
+#-----------------------------------------------------------------------------
+# structural coverage options, selected by the compiler version (not the OS):
+# condition coverage (-fcondition-coverage, gcov -g) requires gcc 14 or newer
+#
+GCC_MAJOR := $(firstword $(subst ., ,$(shell $(CC) -dumpversion)))
+ifeq ($(filter 1 2 3 4 5 6 7 8 9 10 11 12 13,$(GCC_MAJOR)),)
+	COV        := gcov -abcgum
+	CODE_COV   := --coverage -fcondition-coverage  # gcc 14 or newer
+else
+	COV        := gcov -b
+	CODE_COV   := -fprofile-arcs -ftest-coverage   # old gcc (version < 14)
 endif
 
 #-----------------------------------------------------------------------------
@@ -109,20 +138,17 @@ endif
 BIN_DIR := build_host
 
 CFLAGS  := -c -g -O -fno-pie -std=c11 -pedantic -Wall -Wextra -W \
-	$(INCLUDES) $(DEFINES) -DQ_HOST
+	$(CODE_COV) $(INCLUDES) $(DEFINES) -DQ_HOST
 
 CPPFLAGS := -c -g -O -fno-pie -std=c++11 -pedantic -Wall -Wextra \
 	-fno-rtti -fno-exceptions \
-	$(INCLUDES) $(DEFINES) -DQ_HOST
+	$(CODE_COV) $(INCLUDES) $(DEFINES) -DQ_HOST
 
+LINKFLAGS := $(CODE_COV)
+
+# -no-pie (gcc 6 or newer) matches the -fno-pie compile option
 ifndef GCC_OLD
-	LINKFLAGS := -no-pie
-endif
-
-ifdef GCOV
-	CFLAGS    += -fprofile-arcs -ftest-coverage
-	CPPFLAGS  += -fprofile-arcs -ftest-coverage
-	LINKFLAGS += -lgcov --coverage
+	LINKFLAGS += -no-pie
 endif
 
 #-----------------------------------------------------------------------------
@@ -152,7 +178,10 @@ $(TARGET_EXE) : $(C_OBJS_EXT) $(CPP_OBJS_EXT)
 	$(LINK) $(LINKFLAGS) $(LIB_DIRS) -o $@ $^ $(LIBS)
 
 run : $(TARGET_EXE)
+	-$(RM) $(BIN_DIR)/*.gcda
 	$(TARGET_EXE)
+	$(COV) -o $(BIN_DIR) $(CUT) > $(CUT).cov
+	$(CAT) $(CUT).cov
 
 $(BIN_DIR)/%.d : %.cpp
 	$(CPP) -MM -MT $(@:.d=.o) $(CPPFLAGS) $< > $@
@@ -180,6 +209,7 @@ endif
 
 clean :
 	-$(RM) -rf $(BIN_DIR)
+	-$(RM) -f *.gcov $(CUT).cov
 
 show :
 	@echo PROJECT      = $(PROJECT)
@@ -195,4 +225,7 @@ show :
 	@echo LIB_DIRS     = $(LIB_DIRS)
 	@echo LIBS         = $(LIBS)
 	@echo DEFINES      = $(DEFINES)
+	@echo CUT          = $(CUT)
+	@echo COV          = $(COV)
+	@echo CODE_COV     = $(CODE_COV)
 
